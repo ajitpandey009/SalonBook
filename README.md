@@ -1,6 +1,7 @@
 # SalonBook - Modern Salon Booking App
 
-A full-stack salon booking application built with React, Vite, Tailwind CSS, and Firebase.
+![Home Page](./screenshots/home.png)
+![Booking Page](./screenshots/booking.png)
 
 ## Features
 - **Modern UI**: Clean, responsive design with glassmorphism and smooth transitions.
