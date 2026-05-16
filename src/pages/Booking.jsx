@@ -27,7 +27,7 @@ const Booking = () => {
   });
 
   const [barbers, setBarbers] = useState([]);
-  const [availableSlots, setAvailableSlots] = useState([]);
+  const [availableSlots, setAvailableSlots] = useState(defaultTimeSlots);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
