@@ -1,22 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase/config';
 import { collection, addDoc, getDocs, query, where, getDoc, doc } from 'firebase/firestore';
-import { Calendar, Clock, User, Phone, CheckCircle, ChevronRight, Scissors, Star } from 'lucide-react';
-import { format, addDays } from 'date-fns';
+import { Calendar, Clock, User, Phone, CheckCircle, ChevronRight, Scissors } from 'lucide-react';
+import { format } from 'date-fns';
 
 const services = [
-  { id: 'haircut', name: 'Haircut & Styling', price: '$30', duration: '45 min' },
-  { id: 'beard', name: 'Beard Grooming', price: '$20', duration: '30 min' },
-  { id: 'color', name: 'Coloring', price: '$50+', duration: '90 min' },
-  { id: 'facial', name: 'Facial Treatment', price: '$40', duration: '45 min' }
+  { id: 'haircut', name: 'Haircut & Styling', price: '$30' },
+  { id: 'beard', name: 'Beard Grooming', price: '$20' },
+  { id: 'color', name: 'Coloring', price: '$50+' },
+  { id: 'facial', name: 'Facial Treatment', price: '$40' }
+];
+
+const defaultTimeSlots = [
+  '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'
 ];
 
 const Booking = () => {
-  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     customerName: '',
     phone: '',
-    service: '',
+    service: services[0].name,
     barberId: '',
     barberName: '',
     bookingDate: format(new Date(), 'yyyy-MM-dd'),
@@ -36,6 +39,8 @@ const Booking = () => {
   useEffect(() => {
     if (formData.barberId && formData.bookingDate) {
       fetchAvailableSlots();
+    } else {
+      setAvailableSlots([]);
     }
   }, [formData.barberId, formData.bookingDate]);
 
@@ -43,23 +48,22 @@ const Booking = () => {
     const querySnapshot = await getDocs(collection(db, 'barbers'));
     const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     setBarbers(data);
+    if (data.length > 0) {
+      setFormData(prev => ({ ...prev, barberId: data[0].id, barberName: data[0].name }));
+    }
   };
 
   const fetchAvailableSlots = async () => {
     setLoading(true);
     try {
-      // 1. Get Admin-defined slots for this barber/date
+      // 1. Get Admin-defined slots
       const availRef = doc(db, 'barberAvailability', `${formData.barberId}_${formData.bookingDate}`);
       const availSnap = await getDoc(availRef);
-      const adminSlots = availSnap.exists() ? availSnap.data().slots : [];
+      
+      // Default to ALL slots if admin hasn't set anything yet
+      const allowedSlots = availSnap.exists() ? availSnap.data().slots : defaultTimeSlots;
 
-      if (adminSlots.length === 0) {
-        setAvailableSlots([]);
-        setLoading(false);
-        return;
-      }
-
-      // 2. Get existing appointments for this barber/date
+      // 2. Get existing appointments
       const q = query(
         collection(db, 'appointments'),
         where('barberId', '==', formData.barberId),
@@ -68,8 +72,8 @@ const Booking = () => {
       const querySnapshot = await getDocs(q);
       const bookedSlots = querySnapshot.docs.map(doc => doc.data().bookingTime);
 
-      // 3. Filter out booked slots
-      const finalSlots = adminSlots.filter(slot => !bookedSlots.includes(slot));
+      // 3. Filter
+      const finalSlots = allowedSlots.filter(slot => !bookedSlots.includes(slot));
       setAvailableSlots(finalSlots);
     } catch (err) {
       console.error("Error fetching slots:", err);
@@ -77,13 +81,12 @@ const Booking = () => {
     setLoading(false);
   };
 
-  const handleBarberSelect = (barber) => {
-    setFormData({ ...formData, barberId: barber.id, barberName: barber.name });
-    setStep(3);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.bookingTime) {
+      setError('Please select a time slot.');
+      return;
+    }
     setLoading(true);
     setError('');
 
@@ -102,151 +105,46 @@ const Booking = () => {
 
   if (success) {
     return (
-      <div className="max-w-md mx-auto mt-20 p-8 bg-white rounded-3xl border border-border shadow-xl text-center space-y-6 animate-in fade-in zoom-in duration-500">
+      <div className="max-w-md mx-auto mt-20 p-8 bg-white rounded-3xl border border-border shadow-xl text-center space-y-6">
         <div className="bg-green-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto">
           <CheckCircle className="h-10 w-10 text-green-600" />
         </div>
         <h2 className="text-3xl font-black text-foreground">Booking Confirmed!</h2>
-        <p className="text-muted-foreground">We've received your appointment request. See you soon!</p>
-        <button 
-          onClick={() => window.location.href = '/'}
-          className="w-full bg-primary text-white py-4 rounded-2xl font-bold hover:bg-primary/90 transition-all shadow-lg"
-        >
-          Return Home
-        </button>
+        <p className="text-muted-foreground">We'll see you soon, {formData.customerName}!</p>
+        <button onClick={() => window.location.href = '/'} className="w-full bg-primary text-white py-4 rounded-2xl font-bold">Return Home</button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12">
-      <div className="mb-12 text-center space-y-4">
-        <h1 className="text-4xl font-black text-foreground tracking-tight">Book Your Experience</h1>
-        <div className="flex items-center justify-center gap-4">
-          {[1, 2, 3, 4].map(s => (
-            <div key={s} className={`h-2 w-12 rounded-full transition-all ${step >= s ? 'bg-primary' : 'bg-muted'}`} />
-          ))}
-        </div>
-      </div>
+    <div className="max-w-5xl mx-auto px-4 py-12">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Form Side */}
+        <div className="lg:col-span-2 space-y-8">
+          <div className="bg-white p-8 rounded-3xl border border-border shadow-sm space-y-8">
+            <h1 className="text-3xl font-black flex items-center gap-3">
+              <Scissors className="h-8 w-8 text-primary" /> Book Appointment
+            </h1>
 
-      <div className="bg-white rounded-3xl border border-border shadow-2xl overflow-hidden">
-        {/* Step 1: Service */}
-        {step === 1 && (
-          <div className="p-8 space-y-6 animate-in slide-in-from-right duration-300">
-            <h2 className="text-xl font-bold flex items-center gap-2"><Scissors className="h-5 w-5" /> Select Service</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {services.map(s => (
-                <button
-                  key={s.id}
-                  onClick={() => { setFormData({...formData, service: s.name}); setStep(2); }}
-                  className="flex items-center justify-between p-6 rounded-2xl border-2 border-border hover:border-primary hover:bg-primary/5 transition-all text-left group"
-                >
-                  <div>
-                    <p className="font-bold text-lg group-hover:text-primary transition-colors">{s.name}</p>
-                    <p className="text-sm text-muted-foreground">{s.duration}</p>
-                  </div>
-                  <p className="font-black text-primary">{s.price}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Step 2: Barber */}
-        {step === 2 && (
-          <div className="p-8 space-y-6 animate-in slide-in-from-right duration-300">
-            <h2 className="text-xl font-bold flex items-center gap-2"><User className="h-5 w-5" /> Choose Your Stylist</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {barbers.length === 0 ? (
-                <p className="text-muted-foreground col-span-2 text-center py-10">No barbers available at the moment.</p>
-              ) : (
-                barbers.map(b => (
-                  <button
-                    key={b.id}
-                    onClick={() => handleBarberSelect(b)}
-                    className="flex items-center gap-4 p-6 rounded-2xl border-2 border-border hover:border-primary hover:bg-primary/5 transition-all text-left group"
-                  >
-                    <div className="bg-muted p-3 rounded-xl group-hover:bg-primary/10 transition-colors">
-                      <User className="h-6 w-6 text-muted-foreground group-hover:text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-lg">{b.name}</p>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1"><Star className="h-3 w-3 text-amber-500" /> Professional Stylist</p>
-                    </div>
-                  </button>
-                ))
-              )}
-            </div>
-            <button onClick={() => setStep(1)} className="text-muted-foreground font-bold hover:text-foreground">← Back to services</button>
-          </div>
-        )}
-
-        {/* Step 3: Date & Time */}
-        {step === 3 && (
-          <div className="p-8 space-y-8 animate-in slide-in-from-right duration-300">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-4">
-                <h2 className="text-xl font-bold flex items-center gap-2"><Calendar className="h-5 w-5" /> Select Date</h2>
-                <input 
-                  type="date"
-                  className="w-full p-4 rounded-2xl border-2 border-border outline-none focus:border-primary transition-all text-lg font-bold"
-                  value={formData.bookingDate}
-                  min={format(new Date(), 'yyyy-MM-dd')}
-                  onChange={(e) => setFormData({...formData, bookingDate: e.target.value})}
-                />
-              </div>
-              <div className="space-y-4">
-                <h2 className="text-xl font-bold flex items-center gap-2"><Clock className="h-5 w-5" /> Select Time</h2>
-                {loading ? (
-                  <div className="grid grid-cols-3 gap-2">
-                    {[1,2,3,4,5,6].map(i => <div key={i} className="h-12 bg-muted animate-pulse rounded-xl" />)}
-                  </div>
-                ) : availableSlots.length === 0 ? (
-                  <div className="p-6 bg-muted/50 rounded-2xl text-center">
-                    <p className="text-sm text-muted-foreground font-medium">No slots available for this date/barber. Try another selection.</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-3 gap-2">
-                    {availableSlots.map(slot => (
-                      <button
-                        key={slot}
-                        onClick={() => { setFormData({...formData, bookingTime: slot}); setStep(4); }}
-                        className="py-3 rounded-xl border-2 border-border font-bold hover:border-primary hover:text-primary transition-all text-sm"
-                      >
-                        {slot}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-            <button onClick={() => setStep(2)} className="text-muted-foreground font-bold hover:text-foreground">← Back to stylist</button>
-          </div>
-        )}
-
-        {/* Step 4: Final Details */}
-        {step === 4 && (
-          <div className="p-8 space-y-8 animate-in slide-in-from-right duration-300">
-            <h2 className="text-xl font-bold flex items-center gap-2"><User className="h-5 w-5" /> Your Contact Info</h2>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-muted-foreground">Full Name</label>
+                  <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Your Name</label>
                   <input 
                     required
                     type="text"
-                    className="w-full p-4 rounded-2xl border-2 border-border outline-none focus:border-primary transition-all"
-                    placeholder="Enter your name"
+                    className="w-full p-4 bg-muted/30 border border-border rounded-2xl outline-none focus:ring-2 focus:ring-primary/20"
+                    placeholder="Enter full name"
                     value={formData.customerName}
                     onChange={(e) => setFormData({...formData, customerName: e.target.value})}
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-muted-foreground">Phone Number</label>
+                  <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Phone Number</label>
                   <input 
                     required
                     type="tel"
-                    className="w-full p-4 rounded-2xl border-2 border-border outline-none focus:border-primary transition-all"
+                    className="w-full p-4 bg-muted/30 border border-border rounded-2xl outline-none focus:ring-2 focus:ring-primary/20"
                     placeholder="Enter phone number"
                     value={formData.phone}
                     onChange={(e) => setFormData({...formData, phone: e.target.value})}
@@ -254,48 +152,118 @@ const Booking = () => {
                 </div>
               </div>
 
-              <div className="bg-muted/50 p-6 rounded-3xl space-y-3">
-                <h3 className="font-bold text-foreground">Summary</h3>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Service:</span>
-                  <span className="font-bold">{formData.service}</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Service</label>
+                  <select 
+                    className="w-full p-4 bg-muted/30 border border-border rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 appearance-none font-medium"
+                    value={formData.service}
+                    onChange={(e) => setFormData({...formData, service: e.target.value})}
+                  >
+                    {services.map(s => <option key={s.id} value={s.name}>{s.name} ({s.price})</option>)}
+                  </select>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Barber:</span>
-                  <span className="font-bold">{formData.barberName}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Date:</span>
-                  <span className="font-bold">{formData.bookingDate}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Time:</span>
-                  <span className="font-bold">{formData.bookingTime}</span>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Select Barber</label>
+                  <select 
+                    className="w-full p-4 bg-muted/30 border border-border rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 appearance-none font-medium"
+                    value={formData.barberId}
+                    onChange={(e) => {
+                      const b = barbers.find(x => x.id === e.target.value);
+                      setFormData({...formData, barberId: b.id, barberName: b.name});
+                    }}
+                  >
+                    {barbers.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                  </select>
                 </div>
               </div>
 
-              {error && <p className="text-red-500 text-sm font-bold">{error}</p>}
-
-              <div className="flex gap-4">
-                <button 
-                  type="button"
-                  onClick={() => setStep(3)}
-                  className="flex-1 bg-muted py-4 rounded-2xl font-bold hover:bg-muted/80 transition-all"
-                >
-                  Back
-                </button>
-                <button 
-                  type="submit"
-                  disabled={loading}
-                  className="flex-[2] bg-primary text-white py-4 rounded-2xl font-bold hover:bg-primary/90 transition-all shadow-lg flex items-center justify-center gap-2"
-                >
-                  {loading ? 'Processing...' : 'Confirm Appointment'}
-                  {!loading && <ChevronRight className="h-5 w-5" />}
-                </button>
+              <div className="space-y-4">
+                <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                  <Calendar className="h-4 w-4" /> 1. Select Date
+                </label>
+                <input 
+                  type="date"
+                  min={format(new Date(), 'yyyy-MM-dd')}
+                  className="w-full sm:w-64 p-4 bg-muted/30 border border-border rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 font-bold"
+                  value={formData.bookingDate}
+                  onChange={(e) => setFormData({...formData, bookingDate: e.target.value})}
+                />
               </div>
+
+              <div className="space-y-4">
+                <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                  <Clock className="h-4 w-4" /> 2. Select Time Slot
+                </label>
+                {loading ? (
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                    {[1,2,3,4,5].map(i => <div key={i} className="h-12 bg-muted animate-pulse rounded-xl" />)}
+                  </div>
+                ) : availableSlots.length === 0 ? (
+                  <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-100">
+                    No slots available for this selection.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+                    {availableSlots.map(slot => (
+                      <button
+                        key={slot}
+                        type="button"
+                        onClick={() => setFormData({...formData, bookingTime: slot})}
+                        className={`py-3 rounded-xl border-2 transition-all font-bold text-sm ${
+                          formData.bookingTime === slot 
+                          ? 'bg-primary text-white border-primary shadow-lg scale-105' 
+                          : 'bg-white border-border text-foreground hover:border-primary/50'
+                        }`}
+                      >
+                        {slot}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {error && <p className="text-red-500 font-bold text-sm">{error}</p>}
+
+              <button 
+                type="submit"
+                disabled={loading}
+                className="w-full bg-primary text-white py-5 rounded-2xl font-black text-lg hover:bg-primary/90 transition-all shadow-xl shadow-primary/20 disabled:opacity-50"
+              >
+                {loading ? 'Confirming...' : 'Confirm Appointment'}
+              </button>
             </form>
           </div>
-        )}
+        </div>
+
+        {/* Info Side */}
+        <div className="space-y-6">
+          <div className="bg-primary p-8 rounded-3xl text-white shadow-xl">
+            <h3 className="text-xl font-bold mb-4">Why Book With Us?</h3>
+            <ul className="space-y-4 text-sm font-medium opacity-90">
+              <li className="flex items-center gap-3">
+                <div className="bg-white/20 p-1 rounded-full"><CheckCircle className="h-4 w-4" /></div>
+                Experienced Professionals
+              </li>
+              <li className="flex items-center gap-3">
+                <div className="bg-white/20 p-1 rounded-full"><CheckCircle className="h-4 w-4" /></div>
+                Premium Products Only
+              </li>
+              <li className="flex items-center gap-3">
+                <div className="bg-white/20 p-1 rounded-full"><CheckCircle className="h-4 w-4" /></div>
+                Relaxing Environment
+              </li>
+            </ul>
+          </div>
+          <div className="bg-white p-8 rounded-3xl border border-border shadow-sm space-y-4">
+            <h3 className="font-bold text-foreground">Salon Location</h3>
+            <p className="text-sm text-muted-foreground">123 Barber Street, Suite 100<br/>New York, NY 10001</p>
+            <div className="pt-2">
+              <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Call Us</p>
+              <p className="font-bold">+1 (555) 123-4567</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -142,8 +142,21 @@ const BarberManagement = () => {
               </div>
 
               <div className="space-y-4">
-                <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground border-b border-border pb-2">
-                  <Clock className="h-4 w-4" /> Available Slots for {format(new Date(selectedDate + 'T00:00:00'), 'MMM dd, yyyy')}
+                <div className="flex items-center justify-between border-b border-border pb-2">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                    <Clock className="h-4 w-4" /> Available Slots for {format(new Date(selectedDate + 'T00:00:00'), 'MMM dd, yyyy')}
+                  </div>
+                  <button 
+                    onClick={async () => {
+                      if (window.confirm('Clear custom slots and reset to all-day availability?')) {
+                        await deleteDoc(doc(db, 'barberAvailability', `${selectedBarber.id}_${selectedDate}`));
+                        fetchAvailability();
+                      }
+                    }}
+                    className="text-xs font-bold text-primary hover:underline"
+                  >
+                    Reset to Default
+                  </button>
                 </div>
                 
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
@@ -161,9 +174,10 @@ const BarberManagement = () => {
                     </button>
                   ))}
                 </div>
-                <div className="bg-muted/50 p-4 rounded-2xl text-xs text-muted-foreground mt-4">
-                  <p>• Colored slots are active and visible to customers.</p>
-                  <p>• Gray slots are hidden and cannot be booked.</p>
+                <div className="bg-primary/5 p-4 rounded-2xl text-xs text-primary font-medium mt-4">
+                  <p>💡 **Default Behavior:** If no slots are selected above, the system automatically opens ALL slots for this day.</p>
+                  <p className="mt-1 opacity-80">• Click slots to restrict availability to specific times.</p>
+                  <p className="opacity-80">• Use "Reset to Default" to open the whole day again.</p>
                 </div>
               </div>
             </div>
