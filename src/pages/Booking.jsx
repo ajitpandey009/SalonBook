@@ -163,18 +163,29 @@ const Booking = () => {
                     {services.map(s => <option key={s.id} value={s.name}>{s.name} ({s.price})</option>)}
                   </select>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Select Barber</label>
-                  <select 
-                    className="w-full p-4 bg-muted/30 border border-border rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 appearance-none font-medium"
-                    value={formData.barberId}
-                    onChange={(e) => {
-                      const b = barbers.find(x => x.id === e.target.value);
-                      setFormData({...formData, barberId: b.id, barberName: b.name});
-                    }}
-                  >
-                    {barbers.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                  </select>
+                <div className="space-y-4">
+                  <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                    <User className="h-4 w-4" /> Select Your Stylist
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {barbers.map(b => (
+                      <button
+                        key={b.id}
+                        type="button"
+                        onClick={() => setFormData({...formData, barberId: b.id, barberName: b.name})}
+                        className={`p-4 rounded-2xl border-2 transition-all text-left ${
+                          formData.barberId === b.id 
+                          ? 'border-primary bg-primary/5 shadow-sm' 
+                          : 'border-border hover:border-primary/30 bg-white'
+                        }`}
+                      >
+                        <p className={`font-bold ${formData.barberId === b.id ? 'text-primary' : 'text-foreground'}`}>
+                          {b.name}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground uppercase font-black mt-1">Stylist</p>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
