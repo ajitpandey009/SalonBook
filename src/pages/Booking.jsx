@@ -5,10 +5,10 @@ import { Calendar, Clock, User, Phone, CheckCircle, ChevronRight, Scissors } fro
 import { format } from 'date-fns';
 
 const services = [
-  { id: 'haircut', name: 'Haircut & Styling', price: '$30' },
-  { id: 'beard', name: 'Beard Grooming', price: '$20' },
-  { id: 'color', name: 'Coloring', price: '$50+' },
-  { id: 'facial', name: 'Facial Treatment', price: '$40' }
+  { id: 'haircut', name: 'Haircut & Styling', price: '₹500' },
+  { id: 'beard', name: 'Beard Grooming', price: '₹300' },
+  { id: 'color', name: 'Coloring', price: '₹1200+' },
+  { id: 'facial', name: 'Facial Treatment', price: '₹800' }
 ];
 
 const defaultTimeSlots = [

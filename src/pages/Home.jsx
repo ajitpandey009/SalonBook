@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom';
 import { CheckCircle, Clock, Star } from 'lucide-react';
 
 const services = [
-  { id: 1, name: 'Haircut & Styling', price: '$45', duration: '45 min', description: 'Professional cut and style tailored to your face shape.' },
-  { id: 2, name: 'Coloring & Highlights', price: '$80+', duration: '120 min', description: 'Full or partial highlights with premium colors.' },
-  { id: 3, name: 'Beard Grooming', price: '$25', duration: '30 min', description: 'Precision trim and hot towel finish.' },
-  { id: 4, name: 'Facial Treatment', price: '$60', duration: '60 min', description: 'Deep cleansing and hydration for glowing skin.' },
+  { id: 1, name: 'Haircut & Styling', price: '₹500', duration: '45 min', description: 'Professional cut and style tailored to your face shape.' },
+  { id: 2, name: 'Coloring & Highlights', price: '₹1200+', duration: '120 min', description: 'Full or partial highlights with premium colors.' },
+  { id: 3, name: 'Beard Grooming', price: '₹300', duration: '30 min', description: 'Precision trim and hot towel finish.' },
+  { id: 4, name: 'Facial Treatment', price: '₹800', duration: '60 min', description: 'Deep cleansing and hydration for glowing skin.' },
 ];
 
 const Home = () => {
