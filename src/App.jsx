@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import Booking from './pages/Booking';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import CheckBooking from './pages/CheckBooking';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/book" element={<Booking />} />
+            <Route path="/my-bookings" element={<CheckBooking />} />
             <Route path="/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminLogin />} />
             <Route 
