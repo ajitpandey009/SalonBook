@@ -1,11 +1,22 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /appointments/{document=**} {
-      // Anyone can create an appointment
-      allow create: if true;
-      // Only authenticated users (admin) can read, update, delete
-      allow read, update, delete: if request.auth != null;
+    // Appointments
+    match /appointments/{appointment} {
+      allow read, create: if true;
+      allow update, delete: if request.auth != null;
+    }
+    
+    // Barbers
+    match /barbers/{barber} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // Barber Availability
+    match /barberAvailability/{availability} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
   }
 }

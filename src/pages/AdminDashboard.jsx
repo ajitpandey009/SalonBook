@@ -3,12 +3,14 @@ import { db, auth } from '../firebase/config';
 import { collection, query, orderBy, onSnapshot, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import { Trash2, LogOut, Calendar, Clock, User, Phone, Briefcase, Filter, ChevronDown } from 'lucide-react';
+import { Trash2, LogOut, Calendar, Clock, User, Phone, Briefcase, Filter, ChevronDown, Scissors } from 'lucide-react';
 import { format } from 'date-fns';
+import BarberManagement from './BarberManagement';
 
 const AdminDashboard = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('bookings'); // 'bookings' or 'barbers'
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -65,9 +67,25 @@ const AdminDashboard = () => {
     <div className="max-w-7xl mx-auto px-4 py-10 space-y-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-border shadow-sm">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Appointments Dashboard</h1>
-          <p className="text-muted-foreground text-sm">Manage all salon bookings and schedules</p>
+        <div className="flex items-center gap-6">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Salon Admin</h1>
+            <p className="text-muted-foreground text-sm">Manage appointments & staff</p>
+          </div>
+          <div className="flex bg-muted p-1 rounded-2xl gap-1">
+            <button 
+              onClick={() => setActiveTab('bookings')}
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'bookings' ? 'bg-white shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Bookings
+            </button>
+            <button 
+              onClick={() => setActiveTab('barbers')}
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'barbers' ? 'bg-white shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Staff & Slots
+            </button>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <div className="hidden md:block text-right mr-4">
@@ -84,8 +102,12 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Stats or Filter (Optional) */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      {activeTab === 'barbers' ? (
+        <BarberManagement />
+      ) : (
+        <>
+          {/* Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-2xl border border-border shadow-sm">
           <p className="text-muted-foreground text-xs font-bold uppercase tracking-wider mb-1">Total Bookings</p>
           <p className="text-3xl font-black">{appointments.length}</p>
@@ -111,7 +133,7 @@ const AdminDashboard = () => {
             <thead>
               <tr className="bg-muted/50 border-b border-border">
                 <th className="px-6 py-4 text-xs font-bold uppercase text-muted-foreground">Customer</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase text-muted-foreground">Service</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase text-muted-foreground">Service & Barber</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase text-muted-foreground">Schedule</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase text-muted-foreground">Status</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase text-muted-foreground text-right">Actions</th>
@@ -140,10 +162,17 @@ const AdminDashboard = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm font-medium">
-                      <span className="bg-muted px-3 py-1 rounded-full text-foreground border border-border">
-                        {appointment.service}
-                      </span>
+                    <td className="px-6 py-4">
+                      <div className="space-y-1">
+                        <span className="bg-muted px-3 py-1 rounded-full text-foreground border border-border text-sm font-medium">
+                          {appointment.service}
+                        </span>
+                        {appointment.barberName && (
+                          <p className="text-xs text-primary font-bold flex items-center gap-1">
+                            <Scissors className="h-3 w-3" /> {appointment.barberName}
+                          </p>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm">
@@ -182,6 +211,8 @@ const AdminDashboard = () => {
           </table>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 };
