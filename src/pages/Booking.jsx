@@ -27,64 +27,73 @@ const Booking = () => {
   });
 
   const [barbers, setBarbers] = useState([]);
-  const [availableSlots, setAvailableSlots] = useState(defaultTimeSlots);
+  const [barberSlots, setBarberSlots] = useState({}); // { barberId: [slots] }
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetchBarbers();
+    fetchInitialData();
   }, []);
 
   useEffect(() => {
-    if (formData.barberId && formData.bookingDate) {
-      fetchAvailableSlots();
-    } else {
-      setAvailableSlots([]);
+    if (barbers.length > 0 && formData.bookingDate) {
+      fetchAllBarberSlots();
     }
-  }, [formData.barberId, formData.bookingDate]);
+  }, [barbers, formData.bookingDate]);
 
-  const fetchBarbers = async () => {
+  const fetchInitialData = async () => {
     const querySnapshot = await getDocs(collection(db, 'barbers'));
     const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     setBarbers(data);
-    if (data.length > 0) {
-      setFormData(prev => ({ ...prev, barberId: data[0].id, barberName: data[0].name }));
-    }
   };
 
-  const fetchAvailableSlots = async () => {
+  const fetchAllBarberSlots = async () => {
     setLoading(true);
+    const slotsMap = {};
+    
     try {
-      // 1. Get Admin-defined slots
-      const availRef = doc(db, 'barberAvailability', `${formData.barberId}_${formData.bookingDate}`);
-      const availSnap = await getDoc(availRef);
-      
-      // Default to ALL slots if admin hasn't set anything yet
-      const allowedSlots = availSnap.exists() ? availSnap.data().slots : defaultTimeSlots;
-
-      // 2. Get existing appointments
+      // Get all appointments for this date to filter
       const q = query(
         collection(db, 'appointments'),
-        where('barberId', '==', formData.barberId),
         where('bookingDate', '==', formData.bookingDate)
       );
       const querySnapshot = await getDocs(q);
-      const bookedSlots = querySnapshot.docs.map(doc => doc.data().bookingTime);
+      const allAppointments = querySnapshot.docs.map(doc => doc.data());
 
-      // 3. Filter
-      const finalSlots = allowedSlots.filter(slot => !bookedSlots.includes(slot));
-      setAvailableSlots(finalSlots);
+      for (const barber of barbers) {
+        // 1. Get Admin-defined slots
+        const availRef = doc(db, 'barberAvailability', `${barber.id}_${formData.bookingDate}`);
+        const availSnap = await getDoc(availRef);
+        const allowedSlots = availSnap.exists() ? availSnap.data().slots : defaultTimeSlots;
+
+        // 2. Filter out already booked slots for THIS barber
+        const bookedForThisBarber = allAppointments
+          .filter(app => app.barberId === barber.id)
+          .map(app => app.bookingTime);
+
+        slotsMap[barber.id] = allowedSlots.filter(slot => !bookedForThisBarber.includes(slot));
+      }
+      setBarberSlots(slotsMap);
     } catch (err) {
-      console.error("Error fetching slots:", err);
+      console.error("Error fetching all slots:", err);
     }
     setLoading(false);
+  };
+
+  const handleSlotSelect = (barber, slot) => {
+    setFormData({
+      ...formData,
+      barberId: barber.id,
+      barberName: barber.name,
+      bookingTime: slot
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.bookingTime) {
-      setError('Please select a time slot.');
+      setError('Please select a stylist and a time slot.');
       return;
     }
     setLoading(true);
@@ -117,23 +126,24 @@ const Booking = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-12">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="max-w-6xl mx-auto px-4 py-12">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
         {/* Form Side */}
         <div className="lg:col-span-2 space-y-8">
           <div className="bg-white p-8 rounded-3xl border border-border shadow-sm space-y-8">
             <h1 className="text-3xl font-black flex items-center gap-3">
-              <Scissors className="h-8 w-8 text-primary" /> Book Appointment
+              <Scissors className="h-8 w-8 text-primary" /> Instant Booking
             </h1>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <form onSubmit={handleSubmit} className="space-y-10">
+              {/* Basic Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-muted/20 p-6 rounded-2xl">
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Your Name</label>
                   <input 
                     required
                     type="text"
-                    className="w-full p-4 bg-muted/30 border border-border rounded-2xl outline-none focus:ring-2 focus:ring-primary/20"
+                    className="w-full p-4 bg-white border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary/20"
                     placeholder="Enter full name"
                     value={formData.customerName}
                     onChange={(e) => setFormData({...formData, customerName: e.target.value})}
@@ -144,134 +154,132 @@ const Booking = () => {
                   <input 
                     required
                     type="tel"
-                    className="w-full p-4 bg-muted/30 border border-border rounded-2xl outline-none focus:ring-2 focus:ring-primary/20"
+                    className="w-full p-4 bg-white border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary/20"
                     placeholder="Enter phone number"
                     value={formData.phone}
                     onChange={(e) => setFormData({...formData, phone: e.target.value})}
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Service</label>
+                <div className="space-y-2 sm:col-span-2">
+                  <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Select Service</label>
                   <select 
-                    className="w-full p-4 bg-muted/30 border border-border rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 appearance-none font-medium"
+                    className="w-full p-4 bg-white border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary/20 appearance-none font-medium"
                     value={formData.service}
                     onChange={(e) => setFormData({...formData, service: e.target.value})}
                   >
                     {services.map(s => <option key={s.id} value={s.name}>{s.name} ({s.price})</option>)}
                   </select>
                 </div>
-                <div className="space-y-4">
-                  <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                    <User className="h-4 w-4" /> Select Your Stylist
+              </div>
+
+              {/* Date Selection */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-lg font-black text-foreground flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-primary" /> 1. Pick a Date
                   </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {barbers.map(b => (
-                      <button
-                        key={b.id}
-                        type="button"
-                        onClick={() => setFormData({...formData, barberId: b.id, barberName: b.name})}
-                        className={`p-4 rounded-2xl border-2 transition-all text-left ${
-                          formData.barberId === b.id 
-                          ? 'border-primary bg-primary/5 shadow-sm' 
-                          : 'border-border hover:border-primary/30 bg-white'
-                        }`}
-                      >
-                        <p className={`font-bold ${formData.barberId === b.id ? 'text-primary' : 'text-foreground'}`}>
-                          {b.name}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground uppercase font-black mt-1">Stylist</p>
-                      </button>
-                    ))}
-                  </div>
+                  <input 
+                    type="date"
+                    min={format(new Date(), 'yyyy-MM-dd')}
+                    className="p-3 bg-muted border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary/20 font-bold"
+                    value={formData.bookingDate}
+                    onChange={(e) => setFormData({...formData, bookingDate: e.target.value})}
+                  />
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                  <Calendar className="h-4 w-4" /> 1. Select Date
+              {/* Barber & Slot Grid */}
+              <div className="space-y-6">
+                <label className="text-lg font-black text-foreground flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-primary" /> 2. Pick Your Stylist & Time
                 </label>
-                <input 
-                  type="date"
-                  min={format(new Date(), 'yyyy-MM-dd')}
-                  className="w-full sm:w-64 p-4 bg-muted/30 border border-border rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 font-bold"
-                  value={formData.bookingDate}
-                  onChange={(e) => setFormData({...formData, bookingDate: e.target.value})}
-                />
-              </div>
-
-              <div className="space-y-4">
-                <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                  <Clock className="h-4 w-4" /> 2. Select Time Slot
-                </label>
+                
                 {loading ? (
-                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                    {[1,2,3,4,5].map(i => <div key={i} className="h-12 bg-muted animate-pulse rounded-xl" />)}
-                  </div>
-                ) : availableSlots.length === 0 ? (
-                  <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-100">
-                    No slots available for this selection.
+                  <div className="space-y-6">
+                    {[1, 2].map(i => (
+                      <div key={i} className="animate-pulse space-y-3">
+                        <div className="h-6 w-32 bg-muted rounded" />
+                        <div className="grid grid-cols-4 gap-2">
+                          {[1, 2, 3, 4].map(j => <div key={j} className="h-10 bg-muted rounded-lg" />)}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : (
-                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
-                    {availableSlots.map(slot => (
-                      <button
-                        key={slot}
-                        type="button"
-                        onClick={() => setFormData({...formData, bookingTime: slot})}
-                        className={`py-3 rounded-xl border-2 transition-all font-bold text-sm ${
-                          formData.bookingTime === slot 
-                          ? 'bg-primary text-white border-primary shadow-lg scale-105' 
-                          : 'bg-white border-border text-foreground hover:border-primary/50'
-                        }`}
-                      >
-                        {slot}
-                      </button>
+                  <div className="space-y-8">
+                    {barbers.map(barber => (
+                      <div key={barber.id} className="space-y-4 border-l-4 border-muted pl-6 focus-within:border-primary transition-all">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-primary" />
+                          <h3 className="font-bold text-lg text-foreground">{barber.name}</h3>
+                          <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase font-black">Stylist</span>
+                        </div>
+                        
+                        <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-2">
+                          {barberSlots[barber.id]?.length === 0 ? (
+                            <p className="text-xs text-muted-foreground italic col-span-full">No availability today.</p>
+                          ) : (
+                            barberSlots[barber.id]?.map(slot => (
+                              <button
+                                key={slot}
+                                type="button"
+                                onClick={() => handleSlotSelect(barber, slot)}
+                                className={`py-2 px-3 rounded-xl border transition-all text-sm font-bold ${
+                                  formData.barberId === barber.id && formData.bookingTime === slot
+                                  ? 'bg-primary text-white border-primary shadow-lg scale-105'
+                                  : 'bg-white border-border text-foreground hover:border-primary/40'
+                                }`}
+                              >
+                                {slot}
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
               </div>
 
-              {error && <p className="text-red-500 font-bold text-sm">{error}</p>}
+              {error && <p className="text-red-500 font-bold text-sm bg-red-50 p-4 rounded-xl border border-red-100">{error}</p>}
 
               <button 
                 type="submit"
-                disabled={loading}
-                className="w-full bg-primary text-white py-5 rounded-2xl font-black text-lg hover:bg-primary/90 transition-all shadow-xl shadow-primary/20 disabled:opacity-50"
+                disabled={loading || !formData.bookingTime}
+                className="w-full bg-primary text-white py-5 rounded-2xl font-black text-xl hover:bg-primary/90 transition-all shadow-xl shadow-primary/20 disabled:opacity-30 disabled:cursor-not-allowed"
               >
-                {loading ? 'Confirming...' : 'Confirm Appointment'}
+                {loading ? 'Confirming...' : 'Complete Booking'}
               </button>
             </form>
           </div>
         </div>
 
-        {/* Info Side */}
+        {/* Summary Side */}
         <div className="space-y-6">
-          <div className="bg-primary p-8 rounded-3xl text-white shadow-xl">
-            <h3 className="text-xl font-bold mb-4">Why Book With Us?</h3>
-            <ul className="space-y-4 text-sm font-medium opacity-90">
-              <li className="flex items-center gap-3">
-                <div className="bg-white/20 p-1 rounded-full"><CheckCircle className="h-4 w-4" /></div>
-                Experienced Professionals
-              </li>
-              <li className="flex items-center gap-3">
-                <div className="bg-white/20 p-1 rounded-full"><CheckCircle className="h-4 w-4" /></div>
-                Premium Products Only
-              </li>
-              <li className="flex items-center gap-3">
-                <div className="bg-white/20 p-1 rounded-full"><CheckCircle className="h-4 w-4" /></div>
-                Relaxing Environment
-              </li>
-            </ul>
-          </div>
-          <div className="bg-white p-8 rounded-3xl border border-border shadow-sm space-y-4">
-            <h3 className="font-bold text-foreground">Salon Location</h3>
-            <p className="text-sm text-muted-foreground">123 Barber Street, Suite 100<br/>New York, NY 10001</p>
-            <div className="pt-2">
-              <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Call Us</p>
-              <p className="font-bold">+1 (555) 123-4567</p>
+          <div className="bg-foreground text-white p-8 rounded-3xl shadow-xl space-y-6 sticky top-8">
+            <h3 className="text-xl font-bold border-b border-white/10 pb-4">Booking Details</h3>
+            
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-white/60 text-sm">Service</span>
+                <span className="font-bold">{formData.service}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-white/60 text-sm">Stylist</span>
+                <span className="font-bold">{formData.barberName || 'Not selected'}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-white/60 text-sm">Date</span>
+                <span className="font-bold">{formData.bookingDate}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-white/60 text-sm">Time</span>
+                <span className="font-bold text-primary-foreground text-lg">{formData.bookingTime || '--:--'}</span>
+              </div>
+            </div>
+
+            <div className="pt-6 border-t border-white/10 text-xs text-white/50 leading-relaxed">
+              * Please arrive 5 minutes before your appointment. Cancellations must be made 2 hours in advance.
             </div>
           </div>
         </div>
