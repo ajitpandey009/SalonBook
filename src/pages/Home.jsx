@@ -1,66 +1,139 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle, Clock, Star } from 'lucide-react';
+import { CheckCircle, Clock, Star, Shield, Award, Sparkles, Scissors, Smile, Heart } from 'lucide-react';
 
 const services = [
-  { id: 1, name: 'Haircut & Styling', price: '₹500', duration: '45 min', description: 'Professional cut and style tailored to your face shape.' },
-  { id: 2, name: 'Coloring & Highlights', price: '₹1200+', duration: '120 min', description: 'Full or partial highlights with premium colors.' },
-  { id: 3, name: 'Beard Grooming', price: '₹300', duration: '30 min', description: 'Precision trim and hot towel finish.' },
-  { id: 4, name: 'Facial Treatment', price: '₹800', duration: '60 min', description: 'Deep cleansing and hydration for glowing skin.' },
+  // Hair Services
+  { id: 'haircut', name: 'Haircut', price: '₹100', duration: '30 min', category: 'Hair Services', description: 'Professional haircut tailored to your style.' },
+  { id: 'saving', name: 'Shaving', price: '₹60', duration: '20 min', category: 'Hair Services', description: 'Classic clean shave with premium cream.' },
+  { id: 'children_cut', name: "Children's Cutting", price: '₹100', duration: '25 min', category: 'Hair Services', description: 'Gentle and cool haircut for kids.' },
+  { id: 'hair_straightening', name: 'Hair Straightening', price: '₹1000', duration: '90 min', category: 'Hair Services', description: 'Sleek, straight, and smooth hair treatment.' },
+  { id: 'hair_smoothening', name: 'Hair Smoothenings', price: '₹1000', duration: '90 min', category: 'Hair Services', description: 'Soft, silky, and manageable hair.' },
+  { id: 'hair_spa', name: 'Hair Spa', price: '₹650', duration: '60 min', category: 'Hair Services', description: 'Deep nourishing therapy for healthy hair.' },
+  { id: 'head_wash', name: 'Head Wash', price: '₹50', duration: '15 min', category: 'Hair Services', description: 'Refreshing hair wash and gentle blow dry.' },
+
+  // Massage
+  { id: 'amravati_oil', name: 'Amravati Oil Massage', price: '₹150', duration: '45 min', category: 'Massages', description: 'Traditional rejuvenating head & shoulder massage.' },
+  { id: 'navratn_gold', name: 'Navratn Gold Massage', price: '₹150', duration: '45 min', category: 'Massages', description: 'Cooling gold massage for ultimate relaxation.' },
+  { id: 'navratan_oil', name: 'Navratan Oil Massage', price: '₹100', duration: '30 min', category: 'Massages', description: 'Relaxing head massage with herbal oil.' },
+  { id: 'bajaj_oil', name: 'Bajaj Oil Massage', price: '₹150', duration: '45 min', category: 'Massages', description: 'Gentle head massage with nourishing almond oil.' },
+  { id: 'shrigandha_oil', name: 'Shrigandha Oil Massage', price: '₹100', duration: '30 min', category: 'Massages', description: 'Soothing Sandalwood infused oil head massage.' },
+  { id: 'scrub_face', name: 'Scrub Face Massage', price: '₹150', duration: '30 min', category: 'Massages', description: 'Exfoliating and relaxing face massage.' },
+
+  // Color / Hair Color
+  { id: 'beauty_blanc', name: 'Beauty Blanc Gel Color', price: '₹250', duration: '45 min', category: 'Hair Colors', description: 'Vibrant gel hair color with shiny finish.' },
+  { id: 'loreal_black', name: 'Loreal Colour Black', price: '₹400', duration: '60 min', category: 'Hair Colors', description: 'Premium Loreal professional black color.' },
+  { id: 'garnier_black', name: 'Garnier Colour Black', price: '₹200', duration: '45 min', category: 'Hair Colors', description: 'Classic Garnier long-lasting rich black.' },
+  { id: 'enega_colour', name: 'Enega Colour', price: '₹200', duration: '45 min', category: 'Hair Colors', description: 'Gentle color formulation for absolute coverage.' },
+  { id: 'black_rose', name: 'Black Rose', price: '₹200', duration: '40 min', category: 'Hair Colors', description: 'Reliable and fast black hair coloring.' },
+
+  // Facials & D-Tan
+  { id: 'pro_lacto', name: 'Pro+ Lacto Detn', price: '₹350', duration: '40 min', category: 'Facials & D-Tan', description: 'Advanced lacto formula to instantly remove tan.' },
+  { id: 'raga_detn', name: 'Raga Professional Detn', price: '₹400', duration: '45 min', category: 'Facials & D-Tan', description: 'Elite skin clarifying & de-tanning session.' },
+  { id: 'real_aroma_diamond', name: 'Real Aroma Diamond Facial', price: '₹650', duration: '60 min', category: 'Facials & D-Tan', description: 'Luxury diamond glow for premium radiance.' },
+  { id: 'real_aroma_gold', name: 'Real Aroma Gold Facial', price: '₹700', duration: '60 min', category: 'Facials & D-Tan', description: 'Golden therapy for skin renewal & brightness.' },
+  { id: 'real_aroma_papaya', name: 'Real Aroma Papaya Facial', price: '₹700', duration: '60 min', category: 'Facials & D-Tan', description: 'Natural fruit enzymes for fresh, smooth skin.' },
+  { id: 'real_aroma_whitening', name: 'Real Aroma Whitening Facial', price: '₹700', duration: '60 min', category: 'Facials & D-Tan', description: 'Even skin tone & high brightening therapy.' },
+  { id: 'banana_facial', name: 'Banana Facial', price: '₹600', duration: '50 min', category: 'Facials & D-Tan', description: 'Deep hydration & nourishment with banana extracts.' },
+  { id: 'o7_plus_gold', name: 'O7 Plus Herbal Gold Facial', price: '₹700', duration: '60 min', category: 'Facials & D-Tan', description: 'Rejuvenating organic herbal gold facial.' },
+  { id: 'herbal_tree', name: 'Herbal Tree Facial', price: '₹800', duration: '70 min', category: 'Facials & D-Tan', description: 'Natural Ayurvedic deep detox and facial therapy.' },
+  { id: 'lotus_facial', name: 'Lotus Facial', price: '₹700', duration: '60 min', category: 'Facials & D-Tan', description: 'Premium lotus extracts for glowing skin.' },
+  { id: 'lilium_gold_scrub', name: 'Lilium Gold Face Scrub', price: '₹250', duration: '30 min', category: 'Facials & D-Tan', description: 'Gentle exfoliating gold scrub for soft texture.' },
+  { id: 'eyebrow_setting', name: 'Eyebrow Setting', price: '₹50', duration: '10 min', category: 'Facials & D-Tan', description: 'Precise shape and setting for eyebrows.' }
 ];
 
+const categories = ['All', 'Hair Services', 'Massages', 'Hair Colors', 'Facials & D-Tan'];
+
 const Home = () => {
+  const [activeCategory, setActiveCategory] = useState('All');
+
+  const filteredServices = activeCategory === 'All'
+    ? services
+    : services.filter(s => s.category === activeCategory);
+
   return (
     <div className="space-y-16 pb-20">
       {/* Hero Section */}
-      <section className="relative h-[500px] flex items-center justify-center text-center px-4 overflow-hidden rounded-3xl mt-8 mx-4 lg:mx-8">
+      <section className="relative h-[550px] flex items-center justify-center text-center px-4 overflow-hidden rounded-3xl mt-8 mx-4 lg:mx-8 shadow-2xl">
         <div className="absolute inset-0 z-0">
           <img 
-            src="https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80&w=1600" 
-            alt="Salon Background" 
-            className="w-full h-full object-cover brightness-50"
+            src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&q=80&w=1600" 
+            alt="MS. Saloon Background" 
+            className="w-full h-full object-cover brightness-[0.4]"
           />
         </div>
-        <div className="relative z-10 max-w-3xl space-y-6">
-          <h1 className="text-4xl md:text-6xl font-extrabold text-white leading-tight">
-            Elevate Your Style at <span className="text-primary-foreground underline decoration-primary underline-offset-8">SalonBook</span>
+        <div className="relative z-10 max-w-4xl space-y-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/20 border border-primary/30 text-primary-foreground text-sm font-bold backdrop-blur-md">
+            <Sparkles className="h-4 w-4" /> Welcome to MS. Saloon
+          </div>
+          <h1 className="text-5xl md:text-7xl font-extrabold text-white leading-tight tracking-tight">
+            Elevate Your Style & <br />
+            <span className="text-primary-foreground underline decoration-primary underline-offset-8">Grooming Experience</span>
           </h1>
-          <p className="text-lg md:text-xl text-gray-200 font-medium">
-            Experience the art of grooming with our expert stylists in a modern, relaxing environment.
+          <p className="text-lg md:text-xl text-gray-200 max-w-2xl mx-auto font-medium">
+            Discover the ultimate destination for premium cuts, soothing massages, vibrant hair colors, and rejuvenating facials at unbeatable rates.
           </p>
-          <div className="pt-4">
-            <Link to="/book" className="bg-primary text-white text-lg font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-primary/30 hover:scale-105 transition-all inline-block">
+          <div className="pt-6 flex flex-col sm:flex-row justify-center items-center gap-4">
+            <Link to="/book" className="w-full sm:w-auto bg-primary text-white text-lg font-bold px-10 py-5 rounded-2xl shadow-xl shadow-primary/20 hover:shadow-primary/40 hover:scale-105 transition-all inline-block">
               Book Your Appointment
+            </Link>
+            <Link to="/my-bookings" className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white border border-white/20 text-lg font-bold px-10 py-5 rounded-2xl backdrop-blur-sm transition-all inline-block">
+              Check My Booking
             </Link>
           </div>
         </div>
       </section>
 
       {/* Services Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-foreground mb-4">Our Services</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            From classic cuts to modern styling, we offer a wide range of services to help you look and feel your best.
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+        <div className="text-center space-y-4">
+          <h2 className="text-4xl font-black text-foreground">Our Premium Menu & Rate Card</h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto font-medium">
+            Browse through our wide array of professional grooming, oil massage, facial, and hair color options.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {services.map((service) => (
-            <div key={service.id} className="bg-white p-6 rounded-2xl border border-border hover:border-primary/50 transition-all shadow-sm group">
-              <div className="bg-primary/10 w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <CheckCircle className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="text-xl font-bold mb-2">{service.name}</h3>
-              <p className="text-muted-foreground text-sm mb-4 leading-relaxed">
-                {service.description}
-              </p>
-              <div className="flex items-center justify-between text-sm font-medium pt-4 border-t border-border">
-                <div className="flex items-center gap-1">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span>{service.duration}</span>
+        {/* Category Tabs */}
+        <div className="flex flex-wrap justify-center gap-2 border-b border-border pb-6 overflow-x-auto">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`px-5 py-3 rounded-2xl text-sm font-bold transition-all whitespace-nowrap ${
+                activeCategory === cat
+                  ? 'bg-primary text-white shadow-lg shadow-primary/10'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        {/* Services Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredServices.map((service) => (
+            <div key={service.id} className="bg-white p-6 rounded-3xl border border-border hover:border-primary/40 hover:shadow-xl transition-all group flex flex-col justify-between h-[220px]">
+              <div>
+                <div className="flex justify-between items-start mb-3">
+                  <span className="text-[10px] bg-primary/10 text-primary font-black uppercase px-2.5 py-1 rounded-full">
+                    {service.category}
+                  </span>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground font-semibold">
+                    <Clock className="h-3.5 w-3.5" />
+                    <span>{service.duration}</span>
+                  </div>
                 </div>
-                <span className="text-primary font-bold text-lg">{service.price}</span>
+                <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">{service.name}</h3>
+                <p className="text-muted-foreground text-xs mt-2 line-clamp-2 leading-relaxed">
+                  {service.description}
+                </p>
+              </div>
+              <div className="flex justify-between items-center pt-4 border-t border-border/50">
+                <span className="text-2xl font-black text-foreground">{service.price}</span>
+                <Link to="/book" className="text-sm font-bold text-primary hover:text-primary/80 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                  Book Slot →
+                </Link>
               </div>
             </div>
           ))}
@@ -68,29 +141,58 @@ const Home = () => {
       </section>
 
       {/* Why Us Section */}
-      <section className="bg-muted py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-3 gap-10">
-          <div className="flex flex-col items-center text-center space-y-4">
-            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-md">
-              <Star className="h-8 w-8 text-amber-500 fill-amber-500" />
-            </div>
-            <h3 className="text-xl font-bold">Expert Stylists</h3>
-            <p className="text-muted-foreground">Years of experience in the latest trends and techniques.</p>
+      <section className="bg-muted py-20 rounded-[40px] mx-4 lg:mx-8">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 space-y-12">
+          <div className="text-center space-y-4">
+            <h2 className="text-3xl font-black text-foreground">Why Choose MS. Saloon?</h2>
+            <p className="text-muted-foreground max-w-xl mx-auto text-sm">
+              We deliver prime hair styling, top brand facial scrubs, and relaxing traditional massages.
+            </p>
           </div>
-          <div className="flex flex-col items-center text-center space-y-4">
-            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-md">
-              <Clock className="h-8 w-8 text-blue-500" />
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            <div className="flex flex-col items-center text-center space-y-4 p-6 bg-white rounded-3xl shadow-sm border border-border">
+              <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Scissors className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold">Professional Cut</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                Expert hair styling, child-friendly trimming, and classic premium shaves.
+              </p>
             </div>
-            <h3 className="text-xl font-bold">Easy Booking</h3>
-            <p className="text-muted-foreground">Select your preferred time slot and book in seconds.</p>
-          </div>
-          <div className="flex flex-col items-center text-center space-y-4">
-            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-md">
-              <CheckCircle className="h-8 w-8 text-green-500" />
+            <div className="flex flex-col items-center text-center space-y-4 p-6 bg-white rounded-3xl shadow-sm border border-border">
+              <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Award className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold">Top Facials & Colors</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                Certified Real Aroma Gold/Diamond Facials, Loreal, Garnier, and Enega hair coloring.
+              </p>
             </div>
-            <h3 className="text-xl font-bold">Quality Products</h3>
-            <p className="text-muted-foreground">We use only premium, eco-friendly products for your hair.</p>
+            <div className="flex flex-col items-center text-center space-y-4 p-6 bg-white rounded-3xl shadow-sm border border-border">
+              <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Smile className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold">Oil Massage Therapy</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                Rejuvenate with absolute relaxation: Amravati, Navratn Gold, and Shrigandha Oil Massage.
+              </p>
+            </div>
           </div>
+        </div>
+      </section>
+
+      {/* Footer Contact Details Info banner */}
+      <section className="max-w-4xl mx-auto px-4 text-center space-y-6">
+        <div className="bg-primary/5 p-8 rounded-3xl border border-primary/20 space-y-4">
+          <p className="text-xs font-black uppercase text-primary tracking-widest">Immediate booking available</p>
+          <h3 className="text-2xl font-black text-foreground">Need Assistance? Call Us Directly</h3>
+          <p className="text-3xl font-black text-primary hover:scale-105 transition-transform cursor-pointer">
+            +91 9708286099
+          </p>
+          <p className="text-xs text-muted-foreground">
+            📍 MS. Saloon - Men's Parlour | Open 7 Days a week (09:00 AM - 08:00 PM)
+          </p>
         </div>
       </section>
     </div>

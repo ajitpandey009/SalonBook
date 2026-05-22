@@ -5,10 +5,43 @@ import { Calendar, Clock, User, Phone, CheckCircle, ChevronRight, Scissors } fro
 import { format } from 'date-fns';
 
 const services = [
-  { id: 'haircut', name: 'Haircut & Styling', price: '₹500' },
-  { id: 'beard', name: 'Beard Grooming', price: '₹300' },
-  { id: 'color', name: 'Coloring', price: '₹1200+' },
-  { id: 'facial', name: 'Facial Treatment', price: '₹800' }
+  // Hair Services
+  { id: 'haircut', name: 'Haircut', price: '₹100', category: 'Hair Services' },
+  { id: 'saving', name: 'Shaving', price: '₹60', category: 'Hair Services' },
+  { id: 'children_cut', name: "Children's Cutting", price: '₹100', category: 'Hair Services' },
+  { id: 'hair_straightening', name: 'Hair Straightening', price: '₹1000', category: 'Hair Services' },
+  { id: 'hair_smoothening', name: 'Hair Smoothenings', price: '₹1000', category: 'Hair Services' },
+  { id: 'hair_spa', name: 'Hair Spa', price: '₹650', category: 'Hair Services' },
+  { id: 'head_wash', name: 'Head Wash', price: '₹50', category: 'Hair Services' },
+
+  // Massage
+  { id: 'amravati_oil', name: 'Amravati Oil Massage', price: '₹150', category: 'Massages' },
+  { id: 'navratn_gold', name: 'Navratn Gold Massage', price: '₹150', category: 'Massages' },
+  { id: 'navratan_oil', name: 'Navratan Oil Massage', price: '₹100', category: 'Massages' },
+  { id: 'bajaj_oil', name: 'Bajaj Oil Massage', price: '₹150', category: 'Massages' },
+  { id: 'shrigandha_oil', name: 'Shrigandha Oil Massage', price: '₹100', category: 'Massages' },
+  { id: 'scrub_face', name: 'Scrub Face Massage', price: '₹150', category: 'Massages' },
+
+  // Color / Hair Color
+  { id: 'beauty_blanc', name: 'Beauty Blanc Gel Color', price: '₹250', category: 'Hair Colors' },
+  { id: 'loreal_black', name: 'Loreal Colour Black', price: '₹400', category: 'Hair Colors' },
+  { id: 'garnier_black', name: 'Garnier Colour Black', price: '₹200', category: 'Hair Colors' },
+  { id: 'enega_colour', name: 'Enega Colour', price: '₹200', category: 'Hair Colors' },
+  { id: 'black_rose', name: 'Black Rose', price: '₹200', category: 'Hair Colors' },
+
+  // Facials & D-Tan
+  { id: 'pro_lacto', name: 'Pro+ Lacto Detn', price: '₹350', category: 'Facials & D-Tan' },
+  { id: 'raga_detn', name: 'Raga Professional Detn', price: '₹400', category: 'Facials & D-Tan' },
+  { id: 'real_aroma_diamond', name: 'Real Aroma Diamond Facial', price: '₹650', category: 'Facials & D-Tan' },
+  { id: 'real_aroma_gold', name: 'Real Aroma Gold Facial', price: '₹700', category: 'Facials & D-Tan' },
+  { id: 'real_aroma_papaya', name: 'Real Aroma Papaya Facial', price: '₹700', category: 'Facials & D-Tan' },
+  { id: 'real_aroma_whitening', name: 'Real Aroma Whitening Facial', price: '₹700', category: 'Facials & D-Tan' },
+  { id: 'banana_facial', name: 'Banana Facial', price: '₹600', category: 'Facials & D-Tan' },
+  { id: 'o7_plus_gold', name: 'O7 Plus Herbal Gold Facial', price: '₹700', category: 'Facials & D-Tan' },
+  { id: 'herbal_tree', name: 'Herbal Tree Facial', price: '₹800', category: 'Facials & D-Tan' },
+  { id: 'lotus_facial', name: 'Lotus Facial', price: '₹700', category: 'Facials & D-Tan' },
+  { id: 'lilium_gold_scrub', name: 'Lilium Gold Face Scrub', price: '₹250', category: 'Facials & D-Tan' },
+  { id: 'eyebrow_setting', name: 'Eyebrow Setting', price: '₹50', category: 'Facials & D-Tan' }
 ];
 
 const defaultTimeSlots = [
@@ -19,7 +52,7 @@ const Booking = () => {
   const [formData, setFormData] = useState({
     customerName: '',
     phone: '',
-    service: services[0].name,
+    service: `${services[0].name} (${services[0].price})`,
     barberId: '',
     barberName: '',
     bookingDate: format(new Date(), 'yyyy-MM-dd'),
@@ -67,7 +100,7 @@ const Booking = () => {
         const availSnap = await getDoc(availRef);
         const allowedSlots = availSnap.exists() ? availSnap.data().slots : defaultTimeSlots;
 
-        // 2. Filter out already booked slots for THIS barber
+        // 2. Filter out already booked slots for THIS barber (invisible mode)
         const bookedForThisBarber = allAppointments
           .filter(app => app.barberId === barber.id)
           .map(app => app.bookingTime);
@@ -93,7 +126,7 @@ const Booking = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.bookingTime) {
-      setError('Please select a stylist and a time slot.');
+      setError('Please select a stylist and an available time slot.');
       return;
     }
     setLoading(true);
@@ -112,6 +145,15 @@ const Booking = () => {
     setLoading(false);
   };
 
+  // Group services by category for dropdown grouping
+  const groupedServices = services.reduce((acc, current) => {
+    if (!acc[current.category]) {
+      acc[current.category] = [];
+    }
+    acc[current.category].push(current);
+    return acc;
+  }, {});
+
   if (success) {
     return (
       <div className="max-w-md mx-auto mt-20 p-8 bg-white rounded-3xl border border-border shadow-xl text-center space-y-6">
@@ -119,7 +161,7 @@ const Booking = () => {
           <CheckCircle className="h-10 w-10 text-green-600" />
         </div>
         <h2 className="text-3xl font-black text-foreground">Booking Confirmed!</h2>
-        <p className="text-muted-foreground">We'll see you soon, {formData.customerName}!</p>
+        <p className="text-muted-foreground">We'll see you soon at MS. Saloon, {formData.customerName}!</p>
         <button onClick={() => window.location.href = '/'} className="w-full bg-primary text-white py-4 rounded-2xl font-bold">Return Home</button>
       </div>
     );
@@ -167,7 +209,15 @@ const Booking = () => {
                     value={formData.service}
                     onChange={(e) => setFormData({...formData, service: e.target.value})}
                   >
-                    {services.map(s => <option key={s.id} value={s.name}>{s.name} ({s.price})</option>)}
+                    {Object.keys(groupedServices).map(category => (
+                      <optgroup key={category} label={category} className="font-bold text-primary">
+                        {groupedServices[category].map(s => (
+                          <option key={s.id} value={`${s.name} (${s.price})`} className="text-foreground font-medium">
+                            {s.name} — {s.price}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -191,7 +241,7 @@ const Booking = () => {
               {/* Barber & Slot Grid */}
               <div className="space-y-6">
                 <label className="text-lg font-black text-foreground flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-primary" /> 2. Pick Your Stylist & Time
+                  <Clock className="h-5 w-5 text-primary" /> 2. Pick Your Stylist & Time (Booked slots are hidden)
                 </label>
                 
                 {loading ? (
@@ -216,10 +266,10 @@ const Booking = () => {
                         </div>
                         
                         <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-2">
-                          {barberSlots[barber.id]?.length === 0 ? (
-                            <p className="text-xs text-muted-foreground italic col-span-full">No availability today.</p>
+                          {!barberSlots[barber.id] || barberSlots[barber.id].length === 0 ? (
+                            <p className="text-xs text-muted-foreground italic col-span-full">No available slots for today.</p>
                           ) : (
-                            barberSlots[barber.id]?.map(slot => (
+                            barberSlots[barber.id].map(slot => (
                               <button
                                 key={slot}
                                 type="button"
@@ -262,7 +312,7 @@ const Booking = () => {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-white/60 text-sm">Service</span>
-                <span className="font-bold">{formData.service}</span>
+                <span className="font-bold text-right text-sm leading-snug">{formData.service}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-white/60 text-sm">Stylist</span>
@@ -279,7 +329,9 @@ const Booking = () => {
             </div>
 
             <div className="pt-6 border-t border-white/10 text-xs text-white/50 leading-relaxed">
-              * Please arrive 5 minutes before your appointment. Cancellations must be made 2 hours in advance.
+              📍 MS. Saloon - Men's Parlour<br />
+              📞 Call: +91 9708286099<br />
+              * Please arrive 5 minutes before your appointment.
             </div>
           </div>
         </div>

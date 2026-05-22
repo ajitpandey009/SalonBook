@@ -31,7 +31,7 @@ function App() {
           </Routes>
         </main>
         <footer className="border-t border-border py-10 mt-20 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} SalonBook. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} MS. Saloon. All rights reserved.</p>
         </footer>
       </div>
     </Router>

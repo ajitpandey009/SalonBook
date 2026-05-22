@@ -9,7 +9,7 @@ const Navbar = () => {
         <div className="flex justify-between h-16 items-center">
           <Link to="/" className="flex items-center gap-2">
             <Scissors className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold tracking-tight text-foreground">SalonBook</span>
+            <span className="text-xl font-bold tracking-tight text-foreground">MS. Saloon</span>
           </Link>
           <div className="flex items-center gap-6">
             <Link to="/" className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors">Home</Link>
