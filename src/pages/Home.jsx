@@ -52,9 +52,9 @@ const Home = () => {
     : services.filter(s => s.category === activeCategory);
 
   return (
-    <div className="space-y-16 pb-20">
+    <div className="space-y-12 sm:space-y-16 pb-20">
       {/* Hero Section */}
-      <section className="relative h-[550px] flex items-center justify-center text-center px-4 overflow-hidden rounded-3xl mt-8 mx-4 lg:mx-8 shadow-2xl">
+      <section className="relative min-h-[480px] sm:h-[550px] flex items-center justify-center text-center px-4 py-12 sm:py-0 overflow-hidden rounded-3xl mt-4 sm:mt-8 mx-2 sm:mx-4 lg:mx-8 shadow-2xl">
         <div className="absolute inset-0 z-0">
           <img 
             src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&q=80&w=1600" 
@@ -62,22 +62,22 @@ const Home = () => {
             className="w-full h-full object-cover brightness-[0.4]"
           />
         </div>
-        <div className="relative z-10 max-w-4xl space-y-6">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/20 border border-primary/30 text-primary-foreground text-sm font-bold backdrop-blur-md">
+        <div className="relative z-10 max-w-4xl space-y-4 sm:space-y-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/20 border border-primary/30 text-primary-foreground text-xs sm:text-sm font-bold backdrop-blur-md">
             <Sparkles className="h-4 w-4" /> Welcome to MS. Saloon
           </div>
-          <h1 className="text-5xl md:text-7xl font-extrabold text-white leading-tight tracking-tight">
+          <h1 className="text-3xl sm:text-5xl md:text-7xl font-extrabold text-white leading-tight tracking-tight px-2">
             Elevate Your Style & <br />
             <span className="text-primary-foreground underline decoration-primary underline-offset-8">Grooming Experience</span>
           </h1>
-          <p className="text-lg md:text-xl text-gray-200 max-w-2xl mx-auto font-medium">
+          <p className="text-sm sm:text-lg md:text-xl text-gray-200 max-w-2xl mx-auto font-medium px-4">
             Discover the ultimate destination for premium cuts, soothing massages, vibrant hair colors, and rejuvenating facials at unbeatable rates.
           </p>
-          <div className="pt-6 flex flex-col sm:flex-row justify-center items-center gap-4">
-            <Link to="/book" className="w-full sm:w-auto bg-primary text-white text-lg font-bold px-10 py-5 rounded-2xl shadow-xl shadow-primary/20 hover:shadow-primary/40 hover:scale-105 transition-all inline-block">
-              Book Your Appointment
+          <div className="pt-4 flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 px-4 w-full max-w-md mx-auto">
+            <Link to="/book" className="w-full sm:w-auto bg-primary text-white text-base sm:text-lg font-bold px-8 sm:px-10 py-4 sm:py-5 rounded-2xl shadow-xl shadow-primary/20 hover:shadow-primary/40 hover:scale-105 transition-all text-center">
+              Book Appointment
             </Link>
-            <Link to="/my-bookings" className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white border border-white/20 text-lg font-bold px-10 py-5 rounded-2xl backdrop-blur-sm transition-all inline-block">
+            <Link to="/my-bookings" className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white border border-white/20 text-base sm:text-lg font-bold px-8 sm:px-10 py-4 sm:py-5 rounded-2xl backdrop-blur-sm transition-all text-center">
               Check My Booking
             </Link>
           </div>
@@ -87,19 +87,19 @@ const Home = () => {
       {/* Services Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         <div className="text-center space-y-4">
-          <h2 className="text-4xl font-black text-foreground">Our Premium Menu & Rate Card</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto font-medium">
+          <h2 className="text-3xl sm:text-4xl font-black text-foreground">Our Premium Menu & Rate Card</h2>
+          <p className="text-muted-foreground text-sm sm:text-base max-w-2xl mx-auto font-medium">
             Browse through our wide array of professional grooming, oil massage, facial, and hair color options.
           </p>
         </div>
 
         {/* Category Tabs */}
-        <div className="flex flex-wrap justify-center gap-2 border-b border-border pb-6 overflow-x-auto">
+        <div className="flex justify-start sm:justify-center gap-2 border-b border-border pb-6 overflow-x-auto no-scrollbar scroll-smooth">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`px-5 py-3 rounded-2xl text-sm font-bold transition-all whitespace-nowrap ${
+              className={`px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
                 activeCategory === cat
                   ? 'bg-primary text-white shadow-lg shadow-primary/10'
                   : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'
@@ -113,7 +113,7 @@ const Home = () => {
         {/* Services Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredServices.map((service) => (
-            <div key={service.id} className="bg-white p-6 rounded-3xl border border-border hover:border-primary/40 hover:shadow-xl transition-all group flex flex-col justify-between h-[220px]">
+            <div key={service.id} className="bg-white p-6 rounded-3xl border border-border hover:border-primary/40 hover:shadow-xl transition-all group flex flex-col justify-between min-h-[220px] h-auto">
               <div>
                 <div className="flex justify-between items-start mb-3">
                   <span className="text-[10px] bg-primary/10 text-primary font-black uppercase px-2.5 py-1 rounded-full">
@@ -124,14 +124,14 @@ const Home = () => {
                     <span>{service.duration}</span>
                   </div>
                 </div>
-                <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">{service.name}</h3>
+                <h3 className="text-lg sm:text-xl font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">{service.name}</h3>
                 <p className="text-muted-foreground text-xs mt-2 line-clamp-2 leading-relaxed">
                   {service.description}
                 </p>
               </div>
-              <div className="flex justify-between items-center pt-4 border-t border-border/50">
-                <span className="text-2xl font-black text-foreground">{service.price}</span>
-                <Link to="/book" className="text-sm font-bold text-primary hover:text-primary/80 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+              <div className="flex justify-between items-center pt-4 border-t border-border/50 mt-4">
+                <span className="text-xl sm:text-2xl font-black text-foreground">{service.price}</span>
+                <Link to="/book" className="text-xs sm:text-sm font-bold text-primary hover:text-primary/80 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
                   Book Slot →
                 </Link>
               </div>

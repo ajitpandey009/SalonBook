@@ -86,28 +86,37 @@ const Booking = () => {
     const slotsMap = {};
     
     try {
-      // Get all appointments for this date to filter
-      const q = query(
+      // 1. Get all appointments for this date in a single query
+      const appointmentsQuery = query(
         collection(db, 'appointments'),
         where('bookingDate', '==', formData.bookingDate)
       );
-      const querySnapshot = await getDocs(q);
-      const allAppointments = querySnapshot.docs.map(doc => doc.data());
+      const appointmentsSnapshot = await getDocs(appointmentsQuery);
+      const allAppointments = appointmentsSnapshot.docs.map(doc => doc.data());
 
-      // Fetch availability for all barbers in parallel
-      await Promise.all(
-        barbers.map(async (barber) => {
-          const availRef = doc(db, 'barberAvailability', `${barber.id}_${formData.bookingDate}`);
-          const availSnap = await getDoc(availRef);
-          const allowedSlots = availSnap.exists() ? availSnap.data().slots : defaultTimeSlots;
-
-          const bookedForThisBarber = allAppointments
-            .filter(app => app.barberId === barber.id)
-            .map(app => app.bookingTime);
-
-          slotsMap[barber.id] = allowedSlots.filter(slot => !bookedForThisBarber.includes(slot));
-        })
+      // 2. Fetch all custom barber availabilities for this date in a single query
+      const availabilityQuery = query(
+        collection(db, 'barberAvailability'),
+        where('date', '==', formData.bookingDate)
       );
+      const availabilitySnapshot = await getDocs(availabilityQuery);
+      const availabilityMap = {};
+      availabilitySnapshot.docs.forEach(doc => {
+        const data = doc.data();
+        availabilityMap[data.barberId] = data.slots;
+      });
+
+      // 3. Map slots for each barber (invisible mode)
+      for (const barber of barbers) {
+        const customSlots = availabilityMap[barber.id];
+        const allowedSlots = customSlots !== undefined ? customSlots : defaultTimeSlots;
+
+        const bookedForThisBarber = allAppointments
+          .filter(app => app.barberId === barber.id)
+          .map(app => app.bookingTime);
+
+        slotsMap[barber.id] = allowedSlots.filter(slot => !bookedForThisBarber.includes(slot));
+      }
 
       setBarberSlots(slotsMap);
     } catch (err) {
