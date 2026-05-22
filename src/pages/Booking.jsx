@@ -94,19 +94,21 @@ const Booking = () => {
       const querySnapshot = await getDocs(q);
       const allAppointments = querySnapshot.docs.map(doc => doc.data());
 
-      for (const barber of barbers) {
-        // 1. Get Admin-defined slots
-        const availRef = doc(db, 'barberAvailability', `${barber.id}_${formData.bookingDate}`);
-        const availSnap = await getDoc(availRef);
-        const allowedSlots = availSnap.exists() ? availSnap.data().slots : defaultTimeSlots;
+      // Fetch availability for all barbers in parallel
+      await Promise.all(
+        barbers.map(async (barber) => {
+          const availRef = doc(db, 'barberAvailability', `${barber.id}_${formData.bookingDate}`);
+          const availSnap = await getDoc(availRef);
+          const allowedSlots = availSnap.exists() ? availSnap.data().slots : defaultTimeSlots;
 
-        // 2. Filter out already booked slots for THIS barber (invisible mode)
-        const bookedForThisBarber = allAppointments
-          .filter(app => app.barberId === barber.id)
-          .map(app => app.bookingTime);
+          const bookedForThisBarber = allAppointments
+            .filter(app => app.barberId === barber.id)
+            .map(app => app.bookingTime);
 
-        slotsMap[barber.id] = allowedSlots.filter(slot => !bookedForThisBarber.includes(slot));
-      }
+          slotsMap[barber.id] = allowedSlots.filter(slot => !bookedForThisBarber.includes(slot));
+        })
+      );
+
       setBarberSlots(slotsMap);
     } catch (err) {
       console.error("Error fetching all slots:", err);

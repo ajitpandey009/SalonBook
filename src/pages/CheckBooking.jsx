@@ -18,11 +18,14 @@ const CheckBooking = () => {
     try {
       const q = query(
         collection(db, 'appointments'),
-        where('phone', '==', phone.trim()),
-        orderBy('createdAt', 'desc')
+        where('phone', '==', phone.trim())
       );
       const querySnapshot = await getDocs(q);
       const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      // Sort in memory to avoid needing composite index in Firestore
+      data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      
       setAppointments(data);
     } catch (err) {
       console.error("Search failed:", err);
@@ -37,15 +40,15 @@ const CheckBooking = () => {
         <p className="text-muted-foreground">Enter your phone number to see your upcoming appointments</p>
       </div>
 
-      <div className="bg-white p-8 rounded-3xl border border-border shadow-2xl space-y-8 max-w-xl mx-auto">
-        <form onSubmit={handleSearch} className="flex gap-3">
+      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-border shadow-2xl space-y-8 max-w-xl mx-auto">
+        <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1 relative">
             <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <input 
               required
               type="tel"
               placeholder="Enter your phone number"
-              className="w-full pl-12 pr-4 py-4 bg-muted/30 border border-border rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 text-lg font-medium"
+              className="w-full pl-12 pr-4 py-4 bg-muted/30 border border-border rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 text-base sm:text-lg font-medium"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
             />
@@ -53,7 +56,7 @@ const CheckBooking = () => {
           <button 
             type="submit"
             disabled={loading}
-            className="bg-primary text-white px-8 rounded-2xl font-bold hover:bg-primary/90 transition-all flex items-center gap-2 shadow-lg shadow-primary/20"
+            className="bg-primary text-white py-4 sm:py-0 px-8 rounded-2xl font-bold hover:bg-primary/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
           >
             {loading ? 'Searching...' : <><Search className="h-5 w-5" /> Search</>}
           </button>
